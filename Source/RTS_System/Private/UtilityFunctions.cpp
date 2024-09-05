@@ -3,6 +3,8 @@
 
 #include "RTS_System/Public/UtilityFunctions.h"
 
+#include "Kismet/GameplayStatics.h"
+
 FVector UUtilityFunctions::ConvertPositionToBuildingPosition(FVector original, float buildingSize)
 {
     int xLocation = static_cast<int>((original.X + (original.X > 0 ? (buildingSize / 2) : (-buildingSize / 2))) / buildingSize) * buildingSize;
@@ -15,4 +17,23 @@ FVector UUtilityFunctions::ConvertPositionToBuildingPosition(FVector original, f
 #endif
 
     return retVal;
+}
+
+FVector UUtilityFunctions::LineTraceFromMouseToWorld(UObject* WorldContextObject, float MaxDistance, AActor*& HitActor, bool& Hit, FHitResult& OutHit)
+{
+    //Variable Setup
+    UWorld* WorldContext = WorldContextObject->GetWorld();
+
+    FVector WorldDirection = FVector();
+    FVector ignored = FVector();
+    WorldContext->GetFirstPlayerController()->DeprojectMousePositionToWorld(ignored, WorldDirection);
+
+    FVector CameraLocation = UGameplayStatics::GetPlayerCameraManager(WorldContext, 0)->GetCameraLocation();
+    FVector EndLocation = CameraLocation + (WorldDirection * MaxDistance);
+
+    //LineTrace
+    Hit = WorldContext->LineTraceSingleByChannel(OutHit, CameraLocation, EndLocation, ECC_Visibility);
+
+    HitActor = OutHit.GetActor();
+	return OutHit.Location;
 }

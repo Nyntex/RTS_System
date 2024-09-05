@@ -18,4 +18,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static FVector ConvertPositionToBuildingPosition(FVector original, float buildingSize);
+
+	UFUNCTION(BlueprintCallable)
+	static FVector LineTraceFromMouseToWorld(UObject* WorldContextObject, float MaxDistance, AActor*& HitActor, bool& Hit, FHitResult& OutHit);
 };
