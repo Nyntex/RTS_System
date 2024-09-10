@@ -9,8 +9,11 @@ USquadComponent::USquadComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-	SetIsReplicated(true);
 	SetIsReplicatedByDefault(true);
+	SetIsReplicated(true);
+	SquadMembers = TArray<USquadComponent*>();
+	SquadLeader = nullptr;
+
 	// ...
 }
 
@@ -37,7 +40,9 @@ void USquadComponent::AddSquadMember(AActor* Actor)
 {
 	if (!Actor) return;
 
+#if WITH_EDITOR
 	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, "Server Add Squad Member: " + Actor->GetName());
+#endif
 
 	Server_AddSquadMember(Actor);
 }
@@ -81,8 +86,9 @@ void USquadComponent::RemoveSquadMember(AActor* Actor)
 {
 	if (!Actor) return;
 
+#if WITH_EDITOR
 	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, "Server Remove Squad Member: " + Actor->GetName());
-
+#endif
 	Server_RemoveSquadMember(Actor);
 }
 
@@ -100,7 +106,9 @@ void USquadComponent::Server_RemoveSquadMember_Implementation(AActor* Actor)
 
 	if (!tempTargetComponent)
 	{
+#if WITH_EDITOR
 		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, Actor->GetName() + " to remove has no Squad Component, are you removing the correct one?");
+#endif
 		return;
 	}
 
@@ -140,16 +148,22 @@ void USquadComponent::Server_RemoveSquadMember_Implementation(AActor* Actor)
 
 void USquadComponent::PrintAllMembers()
 {
-	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, "Number of Members: " + FString::FromInt(SquadMembers.Num()));
 
+#if WITH_EDITOR
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, "Number of Members: " + FString::FromInt(SquadMembers.Num()));
+#endif
 	for(USquadComponent* member : SquadMembers)
 	{
+#if WITH_EDITOR
 		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red,  member == this ? "This is me :)" : member->GetOwner()->GetName());
+#endif
 	}
 }
 
 void USquadComponent::PrintLeader()
 {
 	if(!SquadLeader) return;
+#if WITH_EDITOR
 	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, SquadLeader == this ? "This is me :)" : SquadLeader->GetOwner()->GetName());
+#endif
 }
