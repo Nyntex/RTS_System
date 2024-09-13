@@ -95,6 +95,8 @@ void USquadComponent::RemoveSquadMember(AActor* Actor)
 void USquadComponent::Server_RemoveSquadMember_Implementation(AActor* Actor)
 {
 	if (!Actor) return;
+	if (!SquadLeader) return;
+	if (SquadMembers.IsEmpty()) return;
 
 	if (this != SquadLeader)
 	{
@@ -119,8 +121,7 @@ void USquadComponent::Server_RemoveSquadMember_Implementation(AActor* Actor)
 			//Change Squad Leader and make him take over
 			//the removal of the squad member with default behavior
 			int index = 0;
-			if (SquadMembers[0] != this) index = 0;
-			else index = 1;
+			if (SquadMembers[0] != this) index = 1; //This should always be false and therefore never be one
 
 			SquadLeader = SquadMembers[index];
 
@@ -150,13 +151,22 @@ void USquadComponent::PrintAllMembers()
 {
 
 #if WITH_EDITOR
-	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, "Number of Members: " + FString::FromInt(SquadMembers.Num()));
+
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, 
+		"Number of Members: " + FString::FromInt(SquadMembers.Num()));
+
 #endif
+
 	for(USquadComponent* member : SquadMembers)
 	{
+
 #if WITH_EDITOR
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red,  member == this ? "This is me :)" : member->GetOwner()->GetName());
+
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red,  
+			member == this ? "This is me :)" : member->GetOwner()->GetName());
+
 #endif
+
 	}
 }
 
@@ -164,6 +174,59 @@ void USquadComponent::PrintLeader()
 {
 	if(!SquadLeader) return;
 #if WITH_EDITOR
-	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, SquadLeader == this ? "This is me :)" : SquadLeader->GetOwner()->GetName());
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, 
+		SquadLeader == this ? "This is me :)" : SquadLeader->GetOwner()->GetName());
 #endif
+}
+
+#include "Components/SceneComponent.h"
+#include "EngineUtils.h"
+
+FVector USquadComponent::GetMoveLocationForMember(int MemberIndex, FVector OriginalMoveLocation, float DistancePerRing, int UnitsPerRing)
+{
+	if (!SquadLeader) return FVector::Zero();
+	if (SquadMembers.IsEmpty()) return FVector::Zero();
+	if (MemberIndex == 0) return OriginalMoveLocation;
+
+	int Ring = 0;
+	int IndexPositionInRing = 0;
+	int j = 0;
+	int k = 0;
+	for(int i = 1; i < 100; i+=i*2) //if this actually reaches 100 you did something wrong
+	{
+		j++;
+		if((static_cast<float>(MemberIndex)) / (UnitsPerRing * i) <= 1)
+		{
+			Ring = j;
+			IndexPositionInRing = MemberIndex - UnitsPerRing * k;
+			break;
+		}
+		k = i;
+	}
+	
+	float Degree = (360.0 / (UnitsPerRing * Ring)) * IndexPositionInRing;
+	float PositionX = (DistancePerRing * Ring) * cos(Degree * PI / 180);
+	float PositionY = (DistancePerRing * Ring) * sin(Degree * PI / 180);
+
+#if WITH_EDITOR
+	FString printValue = 
+		"PositionX = " + FString::SanitizeFloat(PositionX,4) + 
+		" | PositionY = " + FString::SanitizeFloat(PositionY,4) + 
+		" | Ring Number = " + FString::FromInt(Ring) + 
+		" | Position In Ring = " + FString::FromInt(IndexPositionInRing) + 
+		" | Degree = " + FString::SanitizeFloat(Degree, 4);
+	
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, 
+		printValue);
+#endif
+
+	//This is cool Marquee Selection Stuff
+	//USceneComponent* obj = CreateDefaultSubobject<USceneComponent>("Name");
+	//obj->GetLocalBounds().GetBox();
+
+	//TActorIterator<USceneComponent> itr(GetWorld(), TSubclassOf<USceneComponent>());
+
+
+	//UNavigationSystemV1::GetNavigationSystem(this);
+	return FVector(PositionX + OriginalMoveLocation.X, PositionY + OriginalMoveLocation.Y, OriginalMoveLocation.Z);
 }

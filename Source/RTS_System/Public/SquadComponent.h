@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "NavigationSystem.h"
 #include "Components/ActorComponent.h"
 #include "SquadComponent.generated.h"
 
@@ -55,4 +56,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void PrintLeader();
+
+	UFUNCTION(BlueprintCallable)
+	FVector GetMoveLocationForMember(int MemberIndex, FVector OriginalMoveLocation, float DistancePerRing = 250, int UnitsPerRing = 6);
 };
