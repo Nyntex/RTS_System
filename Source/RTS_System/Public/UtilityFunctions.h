@@ -21,4 +21,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	static FVector LineTraceFromMouseToWorld(UObject* WorldContextObject, float MaxDistance, AActor*& HitActor, bool& Hit, FHitResult& OutHit);
+
+	//This is a different Variant of AHUD::GetActorsInSelectionRectangle 
+	UFUNCTION(BlueprintCallable)
+	static void GetMarqueeSelection(UObject* WorldContextObject, const FVector2D FirstPoint, const FVector2D SecondPoint, TArray<AActor*>& OutActors, bool bIncludeNonCollidingComponents, bool bActorMustBeFullyEnclosed);
 };

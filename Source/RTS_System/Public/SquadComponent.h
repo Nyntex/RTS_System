@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "NavigationSystem.h"
 #include "Components/ActorComponent.h"
 #include "SquadComponent.generated.h"
 
@@ -35,7 +34,7 @@ public:
 	//the USquadComponent in order to be added to the squad.
 	//
 	//Works only on owning clients!
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "SquadComponent")
 	void AddSquadMember(AActor* Actor);
 
 	UFUNCTION(Server, Reliable)
@@ -45,18 +44,25 @@ public:
 	//of the removal of the squad leader.
 	//
 	//Works only on owning clients!
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "SquadComponent")
 	void RemoveSquadMember(AActor* Actor);
 
 	UFUNCTION(Server, Reliable)
 	void Server_RemoveSquadMember(AActor* Actor);
 
-	UFUNCTION(BlueprintCallable, CallInEditor)
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "SquadComponent")
 	void PrintAllMembers();
 
-	UFUNCTION(BlueprintCallable, CallInEditor)
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "SquadComponent")
 	void PrintLeader();
 
-	UFUNCTION(BlueprintCallable)
-	FVector GetMoveLocationForMember(int MemberIndex, FVector OriginalMoveLocation, float DistancePerRing = 250, int UnitsPerRing = 6);
+	UFUNCTION(BlueprintCallable, Category = "SquadComponent")
+	FVector GetMoveLocationForMember(int MemberIndex, FVector OriginalMoveLocation, float DistancePerRing = 250, int UnitsPerRing = 6) const;
+
+	UFUNCTION(BlueprintCallable, Category = "SquadComponent")
+	FVector EvaluateLeaderPosition(FVector OriginalLocation, USquadComponent* Leader, float DistancePerRing = 350, int UnitsPerRing = 6) const;
+
+	//The first is the ring number, second is the spot in that ring
+	UFUNCTION(BlueprintCallable, Category = "SquadComponent")
+	void GetRing(int MemberIndex, int UnitsPerRing, int& Ring, int& IndexPositionInRing) const;
 };

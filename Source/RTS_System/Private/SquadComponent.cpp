@@ -2,6 +2,9 @@
 
 
 #include "SquadComponent.h"
+#include "NavigationSystem.h"
+
+
 
 // Sets default values for this component's properties
 USquadComponent::USquadComponent()
@@ -149,84 +152,163 @@ void USquadComponent::Server_RemoveSquadMember_Implementation(AActor* Actor)
 
 void USquadComponent::PrintAllMembers()
 {
-
 #if WITH_EDITOR
-
 	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, 
 		"Number of Members: " + FString::FromInt(SquadMembers.Num()));
-
-#endif
 
 	for(USquadComponent* member : SquadMembers)
 	{
 
-#if WITH_EDITOR
 
 		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red,  
 			member == this ? "This is me :)" : member->GetOwner()->GetName());
 
-#endif
 
 	}
+#endif
 }
 
 void USquadComponent::PrintLeader()
 {
-	if(!SquadLeader) return;
 #if WITH_EDITOR
+	if(!SquadLeader) return;
+
 	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, 
 		SquadLeader == this ? "This is me :)" : SquadLeader->GetOwner()->GetName());
 #endif
 }
 
-#include "Components/SceneComponent.h"
-#include "EngineUtils.h"
-
-FVector USquadComponent::GetMoveLocationForMember(int MemberIndex, FVector OriginalMoveLocation, float DistancePerRing, int UnitsPerRing)
+FVector USquadComponent::GetMoveLocationForMember(int MemberIndex, FVector OriginalMoveLocation, float DistancePerRing, int UnitsPerRing) const
 {
-	if (!SquadLeader) return FVector::Zero();
-	if (SquadMembers.IsEmpty()) return FVector::Zero();
 	if (MemberIndex == 0) return OriginalMoveLocation;
 
 	int Ring = 0;
 	int IndexPositionInRing = 0;
-	int j = 0;
-	int k = 0;
-	for(int i = 1; i < 100; i+=i*2) //if this actually reaches 100 you did something wrong
-	{
-		j++;
-		if((static_cast<float>(MemberIndex)) / (UnitsPerRing * i) <= 1)
-		{
-			Ring = j;
-			IndexPositionInRing = MemberIndex - UnitsPerRing * k;
-			break;
-		}
-		k = i;
-	}
+	GetRing(MemberIndex, UnitsPerRing, Ring, IndexPositionInRing);
 	
-	float Degree = (360.0 / (UnitsPerRing * Ring)) * IndexPositionInRing;
-	float PositionX = (DistancePerRing * Ring) * cos(Degree * PI / 180);
-	float PositionY = (DistancePerRing * Ring) * sin(Degree * PI / 180);
+	const float Degree = (360.0 / (UnitsPerRing * Ring)) * IndexPositionInRing;
+	const float PositionX = (DistancePerRing * Ring) * cos(Degree * PI / 180);
+	const float PositionY = (DistancePerRing * Ring) * sin(Degree * PI / 180);
 
+	//Debug prints
 #if WITH_EDITOR
-	FString printValue = 
-		"PositionX = " + FString::SanitizeFloat(PositionX,4) + 
-		" | PositionY = " + FString::SanitizeFloat(PositionY,4) + 
-		" | Ring Number = " + FString::FromInt(Ring) + 
-		" | Position In Ring = " + FString::FromInt(IndexPositionInRing) + 
-		" | Degree = " + FString::SanitizeFloat(Degree, 4);
-	
-	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, 
-		printValue);
+	if(false)
+	{
+		FString printValue = 
+			"PositionX = " + FString::SanitizeFloat(PositionX,4) + 
+			" | PositionY = " + FString::SanitizeFloat(PositionY,4) + 
+			" | Ring Number = " + FString::FromInt(Ring) + 
+			" | Position In Ring = " + FString::FromInt(IndexPositionInRing) + 
+			" | Degree = " + FString::SanitizeFloat(Degree, 4);
+		
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, 
+			printValue);
+	}
 #endif
 
-	//This is cool Marquee Selection Stuff
-	//USceneComponent* obj = CreateDefaultSubobject<USceneComponent>("Name");
-	//obj->GetLocalBounds().GetBox();
+	//we need the nav system to check if the new position is a valid moveable position
+	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetOwner());
+	check(NavSystem);
+	FNavLocation NavLocation = FNavLocation();
+	NavSystem->ProjectPointToNavigation(FVector(PositionX + OriginalMoveLocation.X, PositionY + OriginalMoveLocation.Y, OriginalMoveLocation.Z), NavLocation, FVector::One() * DistancePerRing * Ring);
 
-	//TActorIterator<USceneComponent> itr(GetWorld(), TSubclassOf<USceneComponent>());
+	return NavLocation.Location;
+}
+
+FVector USquadComponent::EvaluateLeaderPosition(FVector OriginalLocation, USquadComponent* Leader, float DistancePerRing, int UnitsPerRing) const
+{
+	int DistanceToCheck = 0;
+	{
+		int Ring = 0;
+		int IndexInRing = 0;
+		GetRing(Leader->SquadMembers.Num(), UnitsPerRing, Ring, IndexInRing);
+		DistanceToCheck = (Ring * DistancePerRing);
+	}
+
+	FVector RayCastMatrix[8]
+	{
+		FVector(1,0,0),
+		FVector(1,1,0),
+		FVector(0,1,0),
+		FVector(-1,1,0),
+		FVector(-1,0,0),
+		FVector(-1,-1,0),
+		FVector(0,-1,0),
+		FVector(1,-1,0),
+	};
+
+	//we need the nav system to check if the new position is a valid moveable position
+	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetOwner());
+	check(NavSystem);
+	FNavLocation NavLocation = FNavLocation();
+	NavSystem->ProjectPointToNavigation(OriginalLocation, NavLocation, FVector::One() * DistanceToCheck);
+	FVector HeightenedPosition = NavLocation.Location + FVector(0.0, 0.0, 250.0);
+
+	FVector TempLocation = FVector::Zero();
+	int AddedLocations = 0;
+
+	{
+		//We need these temporary values only during the execution of the loop
+		FHitResult HitResult;
+		FNavLocation TempProjection;
+
+		for (int i = 0; i < 8; i++)
+		{
+			if (GetWorld()->LineTraceSingleByChannel(HitResult, (RayCastMatrix[i] * DistanceToCheck) + HeightenedPosition, RayCastMatrix[i] * DistanceToCheck + HeightenedPosition - FVector(0, 0, 1750), ECC_Visibility))
+			{
+#if WITH_EDITOR
+				DrawDebugLine(GetWorld(),
+					(RayCastMatrix[i] * DistanceToCheck) + HeightenedPosition,
+					RayCastMatrix[i] * DistanceToCheck + HeightenedPosition - FVector(0, 0, 1750),
+					FColor::Red, false, 5);
+#endif
+
+				NavSystem->ProjectPointToNavigation(HitResult.Location, TempProjection, FVector::One() * DistanceToCheck);
+				if(TempProjection.Location.X != 0 && TempProjection.Location.Y != 0)
+				{
+					AddedLocations++;
+					TempLocation += TempProjection.Location;
+				}
+			}
+		}
+	}
+	if(NavLocation.Location != FVector::Zero())
+	{
+		AddedLocations++;
+		TempLocation += NavLocation.Location;
+	}
 
 
-	//UNavigationSystemV1::GetNavigationSystem(this);
-	return FVector(PositionX + OriginalMoveLocation.X, PositionY + OriginalMoveLocation.Y, OriginalMoveLocation.Z);
+	NavSystem->ProjectPointToNavigation((TempLocation / AddedLocations), NavLocation, FVector::One() * DistanceToCheck);
+
+#if WITH_EDITOR
+	if(false)
+	{
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red,
+			"Original Location = " + OriginalLocation.ToString() +
+		"\n | Pre-Project Location = " + (TempLocation / AddedLocations).ToString() + 
+		"\n | Projected Location = " + NavLocation.Location.ToString());
+	}
+
+#endif
+
+	return (NavLocation.Location.X == 0 && NavLocation.Location.Y == 0) ? 
+		Leader->GetOwner()->GetActorLocation() : NavLocation.Location;
+}
+
+void USquadComponent::GetRing(int MemberIndex, int UnitsPerRing, int& Ring, int& IndexPositionInRing) const
+{
+	int currentRingNumber = 0;
+	int lastLoopIndex = 0;
+	for (int i = 1; i < 100; i += i * 2) //if this actually reaches 100 you did something wrong
+	{
+		currentRingNumber++;
+		if ((static_cast<float>(MemberIndex)) / (UnitsPerRing * i) <= 1)
+		{
+			Ring = currentRingNumber;
+			IndexPositionInRing = MemberIndex - UnitsPerRing * lastLoopIndex;
+			break;
+		}
+		lastLoopIndex = i;
+	}
 }

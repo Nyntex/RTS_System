@@ -37,3 +37,40 @@ FVector UUtilityFunctions::LineTraceFromMouseToWorld(UObject* WorldContextObject
     HitActor = OutHit.GetActor();
 	return OutHit.Location;
 }
+
+#include "Components/SceneComponent.h"
+#include "EngineUtils.h"
+
+void UUtilityFunctions::GetMarqueeSelection(UObject* WorldContextObject, const FVector2D FirstPoint, const FVector2D SecondPoint,
+	TArray<AActor*>& OutActors, bool bIncludeNonCollidingComponents, bool bActorMustBeFullyEnclosed)
+{
+    OutActors.Reset();
+    FBox2D SelectionRectangle(ForceInit);
+
+    //This method ensures that an appropriate rectangle is generated, 
+    //		no matter what the coordinates of first and second point actually are.
+    SelectionRectangle += FirstPoint;
+    SelectionRectangle += SecondPoint;
+
+    //The Actor Bounds Point Mapping
+    const FVector BoundsPointMapping[8] =
+    {
+        FVector(1.f, 1.f, 1.f),
+        FVector(1.f, 1.f, -1.f),
+        FVector(1.f, -1.f, 1.f),
+        FVector(1.f, -1.f, -1.f),
+        FVector(-1.f, 1.f, 1.f),
+        FVector(-1.f, 1.f, -1.f),
+        FVector(-1.f, -1.f, 1.f),
+        FVector(-1.f, -1.f, -1.f)
+    };
+
+    USceneComponent* obj = NewObject<USceneComponent>();
+    obj->GetLocalBounds().GetBox();
+
+    
+    /*for(TActorIterator<USceneComponent> itr(WorldContextObject->GetWorld(), TSubclassOf<USceneComponent>()); itr; ++itr)
+    {
+	    
+    }*/
+}
