@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "SquadComponent.generated.h"
 
+class USquadFormation;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent, DisplayName = "Squad_Component") )
 class RTS_SYSTEM_API USquadComponent : public UActorComponent
@@ -22,6 +23,12 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Squad")
 	USquadComponent* SquadLeader;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Squad")
+	TSubclassOf<USquadFormation> FormationClass = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Squad", instanced, meta = (ShowInnerProperties))
+	USquadFormation* SquadFormation = nullptr;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -29,6 +36,12 @@ protected:
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+#if WITH_EDITOR
+	virtual bool Modify(bool bAlwaysMarkDirty = true) override;
+	virtual void PreEditChange(FProperty* PropertyAboutToChange) override;
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
 
 	//Replicated way to add new squad members. Squad members are required to have
 	//the USquadComponent in order to be added to the squad.
@@ -50,14 +63,14 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_RemoveSquadMember(AActor* Actor);
 
-	UFUNCTION(BlueprintCallable, CallInEditor, Category = "SquadComponent")
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "SquadComponent", meta = (DevelopmentOnly))
 	void PrintAllMembers();
 
-	UFUNCTION(BlueprintCallable, CallInEditor, Category = "SquadComponent")
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "SquadComponent", meta=(DevelopmentOnly))
 	void PrintLeader();
 
 	UFUNCTION(BlueprintCallable, Category = "SquadComponent")
-	FVector GetMoveLocationForMember(int MemberIndex, FVector OriginalMoveLocation, float DistancePerRing = 250, int UnitsPerRing = 6) const;
+	FVector GetMoveLocationForMember(int MemberIndex, FVector OriginalMoveLocation) const;
 
 	UFUNCTION(BlueprintCallable, Category = "SquadComponent")
 	FVector EvaluateLeaderPosition(FVector OriginalLocation, USquadComponent* Leader, float DistancePerRing = 350, int UnitsPerRing = 6) const;
