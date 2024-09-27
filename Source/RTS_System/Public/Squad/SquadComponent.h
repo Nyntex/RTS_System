@@ -17,10 +17,10 @@ public:
 	// Sets default values for this component's properties
 	USquadComponent();
 
-	UPROPERTY(BlueprintReadWrite, Category = "Squad")
+	UPROPERTY(BlueprintReadWrite, Category = "Squad", Replicated)
 	TArray<USquadComponent*> SquadMembers;
 
-	UPROPERTY(BlueprintReadWrite, Category = "Squad")
+	UPROPERTY(BlueprintReadWrite, Category = "Squad", Replicated)
 	USquadComponent* SquadLeader;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Squad")
@@ -30,6 +30,7 @@ public:
 	USquadFormation* SquadFormation = nullptr;
 
 protected:
+
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
@@ -38,8 +39,6 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 #if WITH_EDITOR
-	virtual bool Modify(bool bAlwaysMarkDirty = true) override;
-	virtual void PreEditChange(FProperty* PropertyAboutToChange) override;
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 

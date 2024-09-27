@@ -4,6 +4,7 @@
 #include "Squad/SquadComponent.h"
 #include "Squad/SquadFormation.h"
 #include "NavigationSystem.h"
+#include "Net/UnrealNetwork.h"
 
 
 // Sets default values for this component's properties
@@ -21,7 +22,6 @@ USquadComponent::USquadComponent()
 		SquadFormation = NewObject<USquadFormation>(this, FormationClass.Get(), FormationClass->GetFName());
 	}
 
-	// ...
 }
 
 
@@ -30,8 +30,6 @@ void USquadComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-	
 }
 
 
@@ -40,32 +38,23 @@ void USquadComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
 }
+
+void USquadComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(USquadComponent, SquadMembers);
+	DOREPLIFETIME(USquadComponent, SquadLeader);
+}
+
+//void USquadComponent::GetLifeTimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)
+//{
+//	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+//	DROPLIFETIME(USquadComponent, SquadMember);
+//	DROPLIFETIME(USquadComponent, SquadLeader);
+//}
 
 #if WITH_EDITOR
-bool USquadComponent::Modify(bool bAlwaysMarkDirty)
-{
-	if(GEngine->IsEditor())
-	{
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red, 
-			"SquadComponent Modify");
-	}
-
-	return Super::Modify(bAlwaysMarkDirty);
-}
-
-void USquadComponent::PreEditChange(FProperty* PropertyAboutToChange)
-{
-	if (GEngine->IsEditor())
-	{
-		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red,
-			"SquadComponent PreEditChange");
-	}
-
-	Super::PreEditChange(PropertyAboutToChange);
-}
-
 void USquadComponent::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	if (GEngine->IsEditor())

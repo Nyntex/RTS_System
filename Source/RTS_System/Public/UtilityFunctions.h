@@ -25,4 +25,10 @@ public:
 	//This is a different Variant of AHUD::GetActorsInSelectionRectangle 
 	UFUNCTION(BlueprintCallable)
 	static void GetMarqueeSelection(UObject* WorldContextObject, const FVector2D FirstPoint, const FVector2D SecondPoint, TArray<AActor*>& OutActors, bool bIncludeNonCollidingComponents, bool bActorMustBeFullyEnclosed);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static void GetHighestPrioritySelection(TArray<AActor*> CurrentSelection, TArray<AActor*>& NewSelection);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static void ConvertToSingleSelectables(TArray<AActor*> OriginalSelection, TArray<AActor*>& NewSelection);
 };

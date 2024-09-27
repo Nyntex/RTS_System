@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SquadComponent.h"
+#include "Squad/SquadComponent.h"
 #include "UObject/Interface.h"
 #include "ISquad.generated.h"
 
