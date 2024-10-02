@@ -7,7 +7,7 @@
 #include "MouseHover_Component.generated.h"
 
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class RTS_SYSTEM_API UMouseHover_Component : public UActorComponent
 {
 	GENERATED_BODY()
@@ -39,31 +39,32 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	UFUNCTION(BlueprintCallable, Category = "MouseHoverComponent", meta=(DeprecatedFunction))
-	void HoverSquad(AActor* ActorOfSquad);
-
-	UFUNCTION(BlueprintCallable, Category = "MouseHoverComponent")
+	UFUNCTION(BlueprintCallable, Category = "MouseHoverComponent", meta = (AutoCreateRefTerm = "TargetActor"))
 	void AddActorToHovered(AActor* TargetActor);
-	UFUNCTION(BlueprintCallable, Category = "MouseHoverComponent")
+	UFUNCTION(BlueprintCallable, Category = "MouseHoverComponent", meta = (AutoCreateRefTerm = "TargetActor"))
 	void RemoveActorFromHovered(AActor* TargetActor);
 
 	//Adds the chosen Actor to the selection as well as calling the ISelection interface Select
 	//method on that target. If the target has a squad only the squad leader will be added to
 	//the selection but the Select method will be called on all members of that squad
-	UFUNCTION(BlueprintCallable, Category = "MouseHoverComponent")
+	UFUNCTION(BlueprintCallable, Category = "MouseHoverComponent", meta = (AutoCreateRefTerm = "TargetActor"))
 	void AddActorToSelection(AActor* TargetActor);
-	UFUNCTION(BlueprintCallable, Category = "MouseHoverComponent")
+	UFUNCTION(BlueprintCallable, Category = "MouseHoverComponent", meta = (AutoCreateRefTerm = "TargetActor"))
 	void RemoveActorFromSelection(AActor* TargetActor);
 
 	//removes unnecessary actors from the array, like squad members that are not the leader
 	//if it has a squad.
 	//This also removes any actor that may not be selectable
-	TArray<AActor*> SingularizeActorArray(TArray<AActor*> ToSingularize);
+	UFUNCTION(BlueprintCallable, Category = "MouseHoverComponent", meta = (AutoCreateRefTerm = "ToSingularize"))
+	TArray<AActor*> SingularizeActorArray(const TArray<AActor*>& ToSingularize);
 
 	//This function is really performance heavy because there are many loops
 	//Actors that are currently selected but not in the array will be deselected
 	//Actors that are currently selected and in the array won't change
 	//Actors that are not currently selected but are in the array will be selected
-	UFUNCTION(BlueprintCallable, Category = "MouseHoverComponent")
-	void MakeNewSelection(TArray<AActor*> ActorsToSelect);
+	UFUNCTION(BlueprintCallable, Category = "MouseHoverComponent", meta = (AutoCreateRefTerm = "ActorsToSelect"))
+	void MakeNewSelection(const TArray<AActor*>& ActorsToSelect);
+
+	UFUNCTION(BlueprintCallable, Category = "MouseHoverComponent", meta = (AutoCreateRefTerm = "ActorsToHover"))
+	void MakeNewHovered(const TArray<AActor*>& ActorsToHover);
 };

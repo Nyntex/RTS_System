@@ -25,7 +25,7 @@ FVector UUtilityFunctions::ConvertPositionToBuildingPosition(FVector original, f
     return retVal;
 }
 
-FVector UUtilityFunctions::LineTraceFromMouseToWorld(UObject* WorldContextObject, float MaxDistance, AActor*& HitActor, bool& Hit, FHitResult& OutHit)
+FVector UUtilityFunctions::LineTraceFromMouseToWorld(bool& Hit, FHitResult& OutHit, AActor*& HitActor, UObject* WorldContextObject, float MaxDistance)
 {
     //Variable Setup
     UWorld* WorldContext = WorldContextObject->GetWorld();

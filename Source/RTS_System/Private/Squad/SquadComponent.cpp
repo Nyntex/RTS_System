@@ -47,13 +47,6 @@ void USquadComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(USquadComponent, SquadLeader);
 }
 
-//void USquadComponent::GetLifeTimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)
-//{
-//	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-//	DROPLIFETIME(USquadComponent, SquadMember);
-//	DROPLIFETIME(USquadComponent, SquadLeader);
-//}
-
 #if WITH_EDITOR
 void USquadComponent::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {

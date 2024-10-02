@@ -2,10 +2,10 @@
 
 
 #include "ActorComponents/MouseHover_Component.h"
-
-#include "Evaluation/PreAnimatedState/MovieScenePreAnimatedCaptureSources.h"
 #include "Interfaces/ISelectable.h"
 #include "Squad/ISquad.h"
+
+#define IMPLEMENTSINTERFACE(x) GetClass()->ImplementsInterface(x::StaticClass())
 
 // Sets default values for this component's properties
 UMouseHover_Component::UMouseHover_Component()
@@ -36,51 +36,12 @@ void UMouseHover_Component::TickComponent(float DeltaTime, ELevelTick TickType, 
 	// ...
 }
 
-void UMouseHover_Component::HoverSquad(AActor* ActorOfSquad)
-{
-	if (!ActorOfSquad) return;
-	if (CurrentHover == ActorOfSquad) return;
-
-	//stop the current hover
-	if(CurrentHover)
-	{
-		if (IISquad::Execute_HasSquad(CurrentHover))
-		{
-			TArray<AActor*> SquadActors = IISquad::Execute_GetSquadMemberActors(CurrentHover);
-			for(AActor* SquadMember : SquadActors)
-			{
-				if (!SquadMember) continue;
-				IISelectable::Execute_StopHover(SquadMember);
-			}
-		}
-		else
-		{
-			IISelectable::Execute_StopHover(CurrentHover);
-		}
-	}
-
-	CurrentHover = ActorOfSquad;
-
-	if (IISquad::Execute_HasSquad(CurrentHover))
-	{
-		TArray<AActor*> SquadActors = IISquad::Execute_GetSquadMemberActors(CurrentHover);
-		for (AActor* SquadMember : SquadActors)
-		{
-			if (!SquadMember) continue;
-			IISelectable::Execute_Hover(SquadMember);
-		}
-	}
-	else
-	{
-		IISelectable::Execute_Hover(CurrentHover);
-	}
-}
-
 void UMouseHover_Component::AddActorToHovered(AActor* TargetActor)
 {
 	if (!TargetActor) return;
+	if (!TargetActor->IMPLEMENTSINTERFACE(UISelectable)) return;
 
-	if(!IISquad::Execute_HasSquad(TargetActor))
+	if(!TargetActor->IMPLEMENTSINTERFACE(UISquad))
 	{
 		IISelectable::Execute_Hover(TargetActor);
 		TotalHovered.AddUnique(TargetActor);
@@ -92,42 +53,50 @@ void UMouseHover_Component::AddActorToHovered(AActor* TargetActor)
 
 	for(AActor* SquadMember : SquadActors)
 	{
-		if(!SquadMember) continue;
+		if (!SquadMember) continue;
+		if (!SquadMember->IMPLEMENTSINTERFACE(UISelectable)) continue;
 		IISelectable::Execute_Hover(SquadMember);
-		TotalHovered.AddUnique(SquadMember);
 	}
 }
 
 void UMouseHover_Component::RemoveActorFromHovered(AActor* TargetActor)
 {
 	if (!TargetActor) return;
+	if (!TargetActor->IMPLEMENTSINTERFACE(UISelectable))
+	{
+		TotalHovered.RemoveSingle(TargetActor);
+		return;
+	}
 
-	if (!IISquad::Execute_HasSquad(TargetActor))
+	if (!TargetActor->IMPLEMENTSINTERFACE(UISquad))
 	{
 		IISelectable::Execute_StopHover(TargetActor);
 		TotalHovered.RemoveSingle(TargetActor);
 		return;
 	}
 
-	TArray<AActor*> SquadActors = IISquad::Execute_GetSquadMemberActors(TargetActor);
+	const TArray<AActor*> SquadActors = IISquad::Execute_GetSquadMemberActors(TargetActor);
 	TotalHovered.RemoveSingle(IISquad::Execute_GetSquadLeaderActor(TargetActor));
 
 	for (AActor* SquadMember : SquadActors)
 	{
 		if (!SquadMember) continue;
-		IISelectable::Execute_Hover(SquadMember);
+		if (!SquadMember->IMPLEMENTSINTERFACE(UISelectable))
+		IISelectable::Execute_StopHover(SquadMember);
 	}
 }
 
 void UMouseHover_Component::AddActorToSelection(AActor* TargetActor)
 {
 	if (!TargetActor) return;
+	if (!TargetActor->IMPLEMENTSINTERFACE(UISelectable)) return;
 
-	if (!IISquad::Execute_HasSquad(TargetActor))
+	if (!TargetActor->IMPLEMENTSINTERFACE(UISquad))
 	{
 		IISelectable::Execute_Select(TargetActor);
 		TotalSelection.AddUnique(TargetActor);
 		return;
+		
 	}
 
 	TArray<AActor*> SquadActors = IISquad::Execute_GetSquadMemberActors(TargetActor);
@@ -143,12 +112,18 @@ void UMouseHover_Component::AddActorToSelection(AActor* TargetActor)
 void UMouseHover_Component::RemoveActorFromSelection(AActor* TargetActor)
 {
 	if (!TargetActor) return;
+	if (!TargetActor->IMPLEMENTSINTERFACE(UISelectable))
+	{
+		TotalSelection.RemoveSingle(TargetActor);
+		return;
+	}
 
-	if (!IISquad::Execute_HasSquad(TargetActor))
+	if (!TargetActor->IMPLEMENTSINTERFACE(UISquad))
 	{
 		IISelectable::Execute_Deselect(TargetActor);
 		TotalSelection.RemoveSingle(TargetActor);
 		return;
+		
 	}
 
 	TArray<AActor*> SquadActors = IISquad::Execute_GetSquadMemberActors(TargetActor);
@@ -161,16 +136,20 @@ void UMouseHover_Component::RemoveActorFromSelection(AActor* TargetActor)
 	}
 }
 
-TArray<AActor*> UMouseHover_Component::SingularizeActorArray(TArray<AActor*> ToSingularize)
+TArray<AActor*> UMouseHover_Component::SingularizeActorArray(const TArray<AActor*>& ToSingularize)
 {
 	TArray<AActor*> SingularizedActors = TArray<AActor*>();
 	for (AActor* target : ToSingularize)
 	{
-		if (!target->GetClass()->ImplementsInterface(UISelectable::StaticClass())) continue;
+		if (!target) continue;
+		if (!target->IMPLEMENTSINTERFACE(UISelectable)) continue;
 
-		if (IISquad::Execute_HasSquad(target))
+		if(target->IMPLEMENTSINTERFACE(UISquad))
 		{
-			SingularizedActors.AddUnique(IISquad::Execute_GetSquadLeaderActor(target));
+			if (IISquad::Execute_HasSquad(target))
+			{
+				SingularizedActors.AddUnique(IISquad::Execute_GetSquadLeaderActor(target));
+			}
 		}
 		else
 		{
@@ -181,17 +160,18 @@ TArray<AActor*> UMouseHover_Component::SingularizeActorArray(TArray<AActor*> ToS
 	return SingularizedActors;
 }
 
-void UMouseHover_Component::MakeNewSelection(TArray<AActor*> ActorsToSelect)
+void UMouseHover_Component::MakeNewSelection(const TArray<AActor*>& ActorsToSelect)
 {
 	TArray<AActor*> NewlyAddedActors = TArray<AActor*>();
 	TArray<AActor*> ActorsToRemove = TotalSelection;
-	TArray<AActor*> SingularizedActorsToSelect = SingularizeActorArray(ActorsToSelect);
+	const TArray<AActor*> SingularizedActorsToSelect = SingularizeActorArray(ActorsToSelect);
+	NewlyAddedActors.Reserve(SingularizedActorsToSelect.Num());
 
 	for(AActor* target : SingularizedActorsToSelect)
 	{
 		if (TotalSelection.Contains(target))
 		{
-			ActorsToRemove.Remove(target);
+			ActorsToRemove.RemoveSingle(target);
 			continue;
 		}
 
@@ -206,6 +186,35 @@ void UMouseHover_Component::MakeNewSelection(TArray<AActor*> ActorsToSelect)
 	for(AActor* NewSelected : NewlyAddedActors)
 	{
 		AddActorToSelection(NewSelected);
+	}
+}
+
+void UMouseHover_Component::MakeNewHovered(const TArray<AActor*>& ActorsToHover)
+{
+	TArray<AActor*> NewlyAddedActors = TArray<AActor*>();
+	TArray<AActor*> ActorsToRemove = TotalHovered;
+	TArray<AActor*> SingularizedActorsToHover = SingularizeActorArray(ActorsToHover);
+	NewlyAddedActors.Reserve(SingularizedActorsToHover.Num());
+
+	for (AActor* target : SingularizedActorsToHover)
+	{
+		if (TotalHovered.Contains(target))
+		{
+			ActorsToRemove.RemoveSingle(target);
+			continue;
+		}
+
+		NewlyAddedActors.Add(target);
+	}
+
+	for (AActor* Removable : ActorsToRemove)
+	{
+		RemoveActorFromHovered(Removable);
+	}
+
+	for (AActor* NewSelected : NewlyAddedActors)
+	{
+		AddActorToHovered(NewSelected);
 	}
 }
 

@@ -21,9 +21,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "SquadFormation")
 	int UnitsPerRing = 6;
 
-	virtual FVector EvaluateLeaderPosition_Internal(FVector OriginalLocation, USquadComponent* Leader) const override;
+	virtual FVector EvaluateLeaderPosition_Implementation(FVector OriginalLocation, USquadComponent* Leader) const override;
 
-	virtual FVector GetMoveLocationForMember_Internal(int MemberIndex, FVector OriginalMoveLocation) const override;
+	virtual FVector GetMoveLocationForMember_Implementation(int MemberIndex, FVector OriginalMoveLocation) const override;
 
 	UFUNCTION(BlueprintCallable, Category = "SquadFormation")
 	void GetRing(int MemberIndex, int& Ring, int& IndexPositionInRing) const;

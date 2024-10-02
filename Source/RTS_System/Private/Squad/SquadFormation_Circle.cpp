@@ -4,7 +4,7 @@
 #include "Squad/SquadFormation_Circle.h"
 #include "NavigationSystem.h"
 
-FVector USquadFormation_Circle::EvaluateLeaderPosition_Internal(FVector OriginalLocation, USquadComponent* Leader) const
+FVector USquadFormation_Circle::EvaluateLeaderPosition_Implementation(FVector OriginalLocation, USquadComponent* Leader) const
 {
 	int DistanceToCheck = 0;
 	{
@@ -85,7 +85,7 @@ FVector USquadFormation_Circle::EvaluateLeaderPosition_Internal(FVector Original
 		Leader->GetOwner()->GetActorLocation() : NavLocation.Location;
 }
 
-FVector USquadFormation_Circle::GetMoveLocationForMember_Internal(int MemberIndex, FVector OriginalMoveLocation) const
+FVector USquadFormation_Circle::GetMoveLocationForMember_Implementation(int MemberIndex, FVector OriginalMoveLocation) const
 {
 	if (MemberIndex == 0) return OriginalMoveLocation;
 

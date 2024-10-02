@@ -22,10 +22,6 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category = "SquadComponent")
 	FVector GetMoveLocationForMember(int MemberIndex, FVector OriginalMoveLocation) const;
 
-	virtual FVector GetMoveLocationForMember_Internal(int MemberIndex, FVector OriginalMoveLocation) const;
-
 	UFUNCTION(BlueprintNativeEvent, Category = "SquadComponent")
 	FVector EvaluateLeaderPosition(FVector OriginalLocation, USquadComponent* Leader) const;
-
-	virtual FVector EvaluateLeaderPosition_Internal(FVector OriginalLocation, USquadComponent* Leader) const;
 };
