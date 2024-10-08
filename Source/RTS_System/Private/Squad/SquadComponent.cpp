@@ -10,8 +10,6 @@
 // Sets default values for this component's properties
 USquadComponent::USquadComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 	SetIsReplicatedByDefault(true);
 	SetIsReplicated(true);
@@ -19,9 +17,8 @@ USquadComponent::USquadComponent()
 	SquadLeader = nullptr;
 	if(FormationClass)
 	{
-		SquadFormation = NewObject<USquadFormation>(this, FormationClass.Get(), FormationClass->GetFName());
+		SquadFormation = Cast<USquadFormation>(CreateDefaultSubobject(FormationClass->GetFName(), FormationClass.Get(), FormationClass.Get(), true, false));
 	}
-
 }
 
 
@@ -54,25 +51,22 @@ void USquadComponent::PostEditChangeProperty(struct FPropertyChangedEvent& Prope
 	{
 		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red,
 			"SquadComponent PostEditChange");
-
 		if (FormationClass != nullptr)
 		{
 			if (SquadFormation == nullptr)
 			{
-				SquadFormation = NewObject<USquadFormation>(this, FormationClass.Get(), FormationClass->GetFName());
+				SquadFormation = Cast<USquadFormation>(CreateDefaultSubobject(FormationClass->GetFName(), FormationClass.Get(), FormationClass.Get(), true, false));
 			}
 			else if (SquadFormation->GetClass()->GetFName() != FormationClass->GetFName() && FormationClass->IsValidLowLevel())
 			{
-				SquadFormation = NewObject<USquadFormation>(this, FormationClass.Get(), FormationClass->GetFName());
+				SquadFormation = Cast<USquadFormation>(CreateDefaultSubobject(FormationClass->GetFName(), FormationClass.Get(), FormationClass.Get(), true, false));
 			}
-
 		}
 		else
 		{
 			SquadFormation = nullptr;
 		}
 	}
-
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 #endif
@@ -196,12 +190,8 @@ void USquadComponent::PrintAllMembers()
 
 	for(USquadComponent* member : SquadMembers)
 	{
-
-
 		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red,  
 			member == this ? "This is me :)" : member->GetOwner()->GetName());
-
-
 	}
 #endif
 }
@@ -221,24 +211,7 @@ FVector USquadComponent::GetMoveLocationForMember(int MemberIndex, FVector Origi
 	return SquadFormation->GetMoveLocationForMember(MemberIndex, OriginalMoveLocation);
 }
 
-FVector USquadComponent::EvaluateLeaderPosition(FVector OriginalLocation, USquadComponent* Leader, float DistancePerRing, int UnitsPerRing) const
+FVector USquadComponent::EvaluateLeaderPosition(FVector OriginalLocation, USquadComponent* Leader) const
 {
 	return SquadFormation->EvaluateLeaderPosition(OriginalLocation, Leader);
-}
-
-void USquadComponent::GetRing(int MemberIndex, int UnitsPerRing, int& Ring, int& IndexPositionInRing) const
-{
-	int currentRingNumber = 0;
-	int lastLoopIndex = 0;
-	for (int i = 1; i < 100; i += i * 2) //if this actually reaches 100 you did something wrong
-	{
-		currentRingNumber++;
-		if ((static_cast<float>(MemberIndex)) / (UnitsPerRing * i) <= 1)
-		{
-			Ring = currentRingNumber;
-			IndexPositionInRing = MemberIndex - UnitsPerRing * lastLoopIndex;
-			break;
-		}
-		lastLoopIndex = i;
-	}
 }

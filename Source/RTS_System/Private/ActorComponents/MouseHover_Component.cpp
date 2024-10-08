@@ -6,6 +6,7 @@
 #include "Squad/ISquad.h"
 
 #define IMPLEMENTSINTERFACE(x) GetClass()->ImplementsInterface(x::StaticClass())
+#define AS_ISQUAD()
 
 // Sets default values for this component's properties
 UMouseHover_Component::UMouseHover_Component()
@@ -68,7 +69,7 @@ void UMouseHover_Component::RemoveActorFromHovered(AActor* TargetActor)
 		return;
 	}
 
-	if (!TargetActor->IMPLEMENTSINTERFACE(UISquad))
+	if (!Cast<IISquad>(TargetActor))
 	{
 		IISelectable::Execute_StopHover(TargetActor);
 		TotalHovered.RemoveSingle(TargetActor);
@@ -81,7 +82,7 @@ void UMouseHover_Component::RemoveActorFromHovered(AActor* TargetActor)
 	for (AActor* SquadMember : SquadActors)
 	{
 		if (!SquadMember) continue;
-		if (!SquadMember->IMPLEMENTSINTERFACE(UISelectable))
+		if (!SquadMember->IMPLEMENTSINTERFACE(UISelectable)) continue;
 		IISelectable::Execute_StopHover(SquadMember);
 	}
 }
@@ -139,6 +140,7 @@ void UMouseHover_Component::RemoveActorFromSelection(AActor* TargetActor)
 TArray<AActor*> UMouseHover_Component::SingularizeActorArray(const TArray<AActor*>& ToSingularize)
 {
 	TArray<AActor*> SingularizedActors = TArray<AActor*>();
+	SingularizedActors.Reserve(ToSingularize.Num() / 2);
 	for (AActor* target : ToSingularize)
 	{
 		if (!target) continue;

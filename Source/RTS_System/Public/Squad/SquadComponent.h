@@ -8,7 +8,7 @@
 
 class USquadFormation;
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent, DisplayName = "Squad_Component") )
+UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent, DisplayName = "Squad_Component"), Blueprintable )
 class RTS_SYSTEM_API USquadComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -21,13 +21,13 @@ public:
 	TArray<USquadComponent*> SquadMembers;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Squad", Replicated)
-	USquadComponent* SquadLeader;
+	TObjectPtr<USquadComponent> SquadLeader;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Squad")
 	TSubclassOf<USquadFormation> FormationClass = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Squad", instanced, meta = (ShowInnerProperties))
-	USquadFormation* SquadFormation = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Squad", meta = (ShowInnerProperties))
+	TObjectPtr<USquadFormation> SquadFormation = nullptr;
 
 protected:
 
@@ -47,7 +47,7 @@ public:
 	//
 	//Works only on owning clients!
 	UFUNCTION(BlueprintCallable, Category = "SquadComponent")
-	void AddSquadMember(AActor* Actor);
+	void AddSquadMember(UPARAM(meta=(MustImplement="ISquad")) AActor* Actor);
 
 	UFUNCTION(Server, Reliable)
 	void Server_AddSquadMember(AActor* Actor);
@@ -72,9 +72,5 @@ public:
 	FVector GetMoveLocationForMember(int MemberIndex, FVector OriginalMoveLocation) const;
 
 	UFUNCTION(BlueprintCallable, Category = "SquadComponent")
-	FVector EvaluateLeaderPosition(FVector OriginalLocation, USquadComponent* Leader, float DistancePerRing = 350, int UnitsPerRing = 6) const;
-
-	//The first is the ring number, second is the spot in that ring
-	UFUNCTION(BlueprintCallable, Category = "SquadComponent")
-	void GetRing(int MemberIndex, int UnitsPerRing, int& Ring, int& IndexPositionInRing) const;
+	FVector EvaluateLeaderPosition(FVector OriginalLocation, USquadComponent* Leader) const;
 };

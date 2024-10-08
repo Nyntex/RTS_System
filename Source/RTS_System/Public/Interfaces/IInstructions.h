@@ -24,16 +24,16 @@ class RTS_SYSTEM_API IIInstructions
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IInstructions")
-	void LocationInstruction(APlayerState* InstructingPlayer, FVector Location);
+	void LocationInstruction(const APlayerState* InstructingPlayer, FVector Location);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IInstructions")
-	void InteractionInstruction(APlayerState* InstructingPlayer, AActor* ToInteract);
+	void InteractionInstruction(const APlayerState* InstructingPlayer, AActor* ToInteract);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IInstructions")
-	void RepairInstruction(APlayerState* InstructingPlayer, AActor* ToRepair);
+	void RepairInstruction(const APlayerState* InstructingPlayer, AActor* ToRepair);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IInstructions")
-	void ConstructInstruction(APlayerState* InstructingPlayer, AActor* ToConstruct);
+	void ConstructInstruction(const APlayerState* InstructingPlayer, AActor* ToConstruct);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IInstructions")
 	bool CanConstruct();

@@ -4,6 +4,7 @@
 #include "Squad/SquadFormation_Circle.h"
 #include "NavigationSystem.h"
 
+
 FVector USquadFormation_Circle::EvaluateLeaderPosition_Implementation(FVector OriginalLocation, USquadComponent* Leader) const
 {
 	int DistanceToCheck = 0;
