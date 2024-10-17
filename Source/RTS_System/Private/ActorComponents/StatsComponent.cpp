@@ -11,6 +11,8 @@ UStatsComponent::UStatsComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
+	SetIsReplicatedByDefault(true);
+	SetIsReplicated(true);
 
 	// ...
 }
@@ -46,9 +48,46 @@ void UStatsComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 void UStatsComponent::CalculateNewStats()
 {
 	StatsChanged = false;
+	CalculatedStats = BaseStats;
+
+	//add base additive stats
+	for(FGameplayStat GameplayStat : BaseAdditiveStats)
+	{
+		//should return true when the tag is the same since the equality operator has been overriden
+		if(int i = CalculatedStats.Find(GameplayStat))
+		{
+			CalculatedStats[i].Add(GameplayStat.StatValue);
+			continue;
+		}
+
+		CalculatedStats.AddUnique(GameplayStat);
+	}
+
+	//add multipliers
+	for (FGameplayStat GameplayStat : MultiplierStats)
+	{
+		//should return true when the tag is the same since the equality operator has been overriden
+		if (int i = CalculatedStats.Find(GameplayStat))
+		{
+			CalculatedStats[i].Multiply(GameplayStat.StatValue);
+		}
+	}
+
+	//add non multiplied additive stats
+	for (FGameplayStat GameplayStat : AdditiveStats)
+	{
+		//should return true when the tag is the same since the equality operator has been overriden
+		if (int i = CalculatedStats.Find(GameplayStat))
+		{
+			CalculatedStats[i].Add(GameplayStat.StatValue);
+			continue;
+		}
+
+		CalculatedStats.AddUnique(GameplayStat);
+	}
 }
 
-void UStatsComponent::AddStat(TArray<FGameplayStat>& StatContainer, const FGameplayTag& Tag, const float& Amount)
+void UStatsComponent::AddStat(TArray<FGameplayStat>& StatContainer, FGameplayTag Tag, const float& Amount)
 {
 	StatsChanged = true;
 	if (int index = StatContainer.Find(FGameplayStat(Tag)))
@@ -58,13 +97,12 @@ void UStatsComponent::AddStat(TArray<FGameplayStat>& StatContainer, const FGamep
 	StatContainer.Add(FGameplayStat(Tag, Amount));
 }
 
-void UStatsComponent::RemoveStat(TArray<FGameplayStat>& StatContainer, const FGameplayTag& Tag,
-	const float& Amount)
+void UStatsComponent::RemoveStat(TArray<FGameplayStat>& StatContainer, FGameplayTag Tag, const float& Amount)
 {
 	StatsChanged = true;
 	if (int index = StatContainer.Find(Tag))
 	{
-		StatContainer[index].Remove(Amount);
+		StatContainer[index].Subtract(Amount);
 		if (StatContainer[index] <= 0.0f)
 		{
 			StatContainer.Remove(Tag);
@@ -72,33 +110,68 @@ void UStatsComponent::RemoveStat(TArray<FGameplayStat>& StatContainer, const FGa
 	}
 }
 
-void UStatsComponent::AddMultiplierStat(const FGameplayTag& Tag, const float& Amount)
+void UStatsComponent::AddMultiplierStat(FGameplayTag Tag, const float& Amount)
 {
 	AddStat(MultiplierStats, Tag, Amount);
 }
 
-void UStatsComponent::RemoveMultiplierStat(const FGameplayTag& Tag, const float& Amount)
+void UStatsComponent::RemoveMultiplierStat(FGameplayTag Tag, const float& Amount)
 {
 	RemoveStat(MultiplierStats, Tag, Amount);
 }
 
-void UStatsComponent::AddBaseAdditiveStat(const FGameplayTag& Tag, const float& Amount)
+void UStatsComponent::AddBaseAdditiveStat(FGameplayTag Tag, const float& Amount)
 {
 	AddStat(BaseAdditiveStats, Tag, Amount);
 }
 
-void UStatsComponent::RemoveBaseAdditiveStat(const FGameplayTag& Tag, const float& Amount)
+void UStatsComponent::RemoveBaseAdditiveStat(FGameplayTag Tag, const float& Amount)
 {
 	RemoveStat(BaseAdditiveStats, Tag, Amount);
 }
 
-void UStatsComponent::AddAdditiveStat(const FGameplayTag& Tag, const float& Amount)
+void UStatsComponent::AddAdditiveStat(FGameplayTag Tag, const float& Amount)
 {
 	AddStat(AdditiveStats, Tag, Amount);
 }
 
-void UStatsComponent::RemoveAdditiveStat(const FGameplayTag& Tag, const float& Amount)
+void UStatsComponent::RemoveAdditiveStat(FGameplayTag Tag, const float& Amount)
 {
 	RemoveStat(AdditiveStats, Tag, Amount);
+}
+
+void UStatsComponent::HasStatWithTag(FGameplayTag GameplayTag, bool& HasTag)
+{
+	HasTag = false;
+
+	for (FGameplayStat GameplayStat : CalculatedStats)
+	{
+		if (GameplayStat.StatTag.MatchesTagExact(GameplayTag))
+		{
+			HasTag = true;
+			return;
+		}
+	}
+}
+
+void UStatsComponent::HasStat(FGameplayTag GameplayTag, bool& HasStat, FGameplayStat& OutStat)
+{
+	HasStat = false;
+	OutStat = FGameplayStat();
+
+	for(FGameplayStat GameplayStat : CalculatedStats)
+	{
+		if(GameplayStat.StatTag.MatchesTagExact(GameplayTag))
+		{
+			HasStat = true;
+			OutStat = GameplayStat;
+			return;
+		}
+	}
+}
+
+bool UStatsComponent::StatsChangedLastTick()
+{
+	return StatsChanged;
 }
 

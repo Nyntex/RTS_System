@@ -11,7 +11,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Squad/ISquad.h"
 
-FVector UUtilityFunctions::ConvertPositionToBuildingPosition(FVector original, float buildingSize)
+FVector UUtilityFunctions::ConvertPositionToBuildingPosition(const FVector original, const float buildingSize)
 {
     int xLocation = static_cast<int>((original.X + (original.X > 0 ? (buildingSize / 2) : (-buildingSize / 2))) / buildingSize) * buildingSize;
     int yLocation = static_cast<int>((original.Y + (original.Y > 0 ? (buildingSize / 2) : (-buildingSize / 2))) / buildingSize) * buildingSize;

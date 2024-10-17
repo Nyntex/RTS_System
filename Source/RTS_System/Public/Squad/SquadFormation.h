@@ -16,6 +16,9 @@ class RTS_SYSTEM_API USquadFormation : public UObject
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(BlueprintReadWrite)
+	USquadComponent* SquadComponent;
+
 	UPROPERTY(EditAnywhere)
 	int ValidationInteger = 100;
 

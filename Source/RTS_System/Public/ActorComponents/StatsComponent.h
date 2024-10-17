@@ -8,16 +8,11 @@
 #include "StatsComponent.generated.h"
 
 //A stat containing a GameplayTag and a value. Value is clamped to 0 if it goes below 0.
-USTRUCT(Blueprintable)
+//The stat value cannot be less than 0
+USTRUCT(Blueprintable, BlueprintType)
 struct FGameplayStat
 {
 	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere)
-	FGameplayTag StatTag;
-
-	UPROPERTY(EditAnywhere)
-	float StatValue;
 
 	FGameplayStat() : StatTag(FGameplayTag()), StatValue(0) {};
 
@@ -27,15 +22,25 @@ struct FGameplayStat
 	FGameplayStat(const FGameplayTag& Tag)
 		: StatTag(Tag), StatValue(0) {};
 
+	//The Tag may only be used with the correct category of tags.
+	//If you want to make any tag available remove the meta=(Category="") specifier
+	UPROPERTY(EditAnywhere, meta=(Categories="RTS.Stats"))
+	FGameplayTag StatTag;
+
+	//This value cannot go below 0
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0))
+	float StatValue;
+
+
 #pragma region Operator
 	FORCEINLINE bool operator==(const FGameplayTag& Other) const
 	{
-		return StatTag == Other;
+		return StatTag.MatchesTagExact(Other);
 	}
 
 	FORCEINLINE bool operator==(const FGameplayStat& Other) const
 	{
-		return Other.StatTag == StatTag;
+		return StatTag.MatchesTagExact(Other.StatTag);
 	}
 
 	FORCEINLINE bool operator==(const float& Other) const
@@ -66,17 +71,22 @@ struct FGameplayStat
 
 	FORCEINLINE void Add(const float& Amount)
 	{
-		StatValue += Amount;
+		StatValue += Amount >= 0 ? Amount : (Amount * (-1));
 	}
 
-	FORCEINLINE void Remove(const float& Amount)
+	FORCEINLINE void Multiply(const float& Amount)
 	{
-		StatValue -= Amount;
+		StatValue *= Amount >= 0 ? Amount : Amount * (-1);
+	}
+
+	FORCEINLINE void Subtract(const float& Amount)
+	{
+		StatValue -= Amount >= 0 ? Amount : (Amount * (-1));
 		if (StatValue <= 0.0f) StatValue = 0.0f;
 	}
 };
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent, DisplayName = "StatsComponent"), Blueprintable )
+UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent, DisplayName = "StatsComponent", ScriptName="StatsComponent"), Blueprintable )
 class RTS_SYSTEM_API UStatsComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -113,11 +123,12 @@ public:
 	UPROPERTY(EditAnywhere, Category="StatsComponent", Replicated)
 	TArray<FGameplayStat> MultiplierStats;
 
-	bool StatsChanged;
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+
+	bool StatsChanged;
 
 public:	
 	// Called every frame
@@ -126,28 +137,39 @@ public:
 	UFUNCTION(Category = "StatsComponent")
 	void CalculateNewStats();
 
-	void AddStat(UPARAM(ref) TArray<FGameplayStat>& StatContainer, const FGameplayTag& Tag, const float& Amount);
-	void RemoveStat(UPARAM(ref) TArray<FGameplayStat>& StatContainer, const FGameplayTag& Tag, const float& Amount);
+	UFUNCTION(BlueprintCallable, Category= "StatsComponent", meta = (Categories = "RTS.Stats"))
+	void AddStat(UPARAM(ref) TArray<FGameplayStat>& StatContainer, FGameplayTag Tag, const float& Amount);
+	UFUNCTION(BlueprintCallable, Category= "StatsComponent", meta = (Categories = "RTS.Stats"))
+	void RemoveStat(UPARAM(ref) TArray<FGameplayStat>& StatContainer, FGameplayTag Tag, const float& Amount);
 
-	UFUNCTION(BlueprintCallable, Category= "StatsComponent")
-	void AddMultiplierStat(const FGameplayTag& Tag, const float& Amount);
+	UFUNCTION(BlueprintCallable, Category= "StatsComponent", meta = (Categories = "RTS.Stats"))
+	void AddMultiplierStat(FGameplayTag Tag, const float& Amount);
 
 	//Lowers the given multiplier stat by that amount. If there is no multiplier
 	//with that value it will be ignored.
 	//
 	//Beware not to add negative numbers or else it will increase the stat if it exists.
-	UFUNCTION(BlueprintCallable, Category= "StatsComponent")
-	void RemoveMultiplierStat(const FGameplayTag& Tag, const float& Amount);
+	UFUNCTION(BlueprintCallable, Category= "StatsComponent", meta = (Categories = "RTS.Stats"))
+	void RemoveMultiplierStat(FGameplayTag Tag, const float& Amount);
 
-	UFUNCTION(BlueprintCallable, Category= "StatsComponent")
-	void AddBaseAdditiveStat(const FGameplayTag& Tag, const float& Amount);
+	UFUNCTION(BlueprintCallable, Category= "StatsComponent", meta = (Categories = "RTS.Stats"))
+	void AddBaseAdditiveStat(FGameplayTag Tag, const float& Amount);
 
-	UFUNCTION(BlueprintCallable, Category= "StatsComponent")
-	void RemoveBaseAdditiveStat(const FGameplayTag& Tag, const float& Amount);
+	UFUNCTION(BlueprintCallable, Category= "StatsComponent", meta = (Categories = "RTS.Stats"))
+	void RemoveBaseAdditiveStat(FGameplayTag Tag, const float& Amount);
 
-	UFUNCTION(BlueprintCallable, Category= "StatsComponent")
-	void AddAdditiveStat(const FGameplayTag& Tag, const float& Amount);
+	UFUNCTION(BlueprintCallable, Category= "StatsComponent", meta = (Categories = "RTS.Stats"))
+	void AddAdditiveStat(FGameplayTag Tag, const float& Amount);
 
-	UFUNCTION(BlueprintCallable, Category= "StatsComponent")
-	void RemoveAdditiveStat(const FGameplayTag& Tag, const float& Amount);
+	UFUNCTION(BlueprintCallable, Category= "StatsComponent", meta = (Categories = "RTS.Stats"))
+	void RemoveAdditiveStat(FGameplayTag Tag, const float& Amount);
+
+	UFUNCTION(BlueprintCallable, Category= "StatsComponent", meta = (Categories = "RTS.Stats"))
+	void HasStatWithTag(FGameplayTag GameplayTag, bool& HasTag);
+
+	UFUNCTION(BlueprintCallable, Category= "StatsComponent", meta = (Categories = "RTS.Stats"))
+	void HasStat(FGameplayTag GameplayTag, bool& HasStat, FGameplayStat& OutStat);
+
+	UFUNCTION(BlueprintCallable, Category= "StatsComponent", meta=(ReturnDisplayName="StatsChanged"))
+	bool StatsChangedLastTick();
 };

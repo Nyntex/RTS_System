@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTags.h"
+#include "ActorComponents/StatsComponent.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/IInstructions.h"
 #include "Interfaces/ISelectable.h"
@@ -31,6 +32,9 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, Category = "Unit", meta=(ExposeOnSpawn), Replicated)
 	TObjectPtr<APlayerState> OwningPlayerState = nullptr;
+
+	//UPROPERTY(BlueprintReadWrite, Category = "Unit", Replicated)
+	//TObjectPtr<UStatsComponent> StatsComponent = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Unit|State", Replicated)
 	FGameplayTagContainer GameplayTags;

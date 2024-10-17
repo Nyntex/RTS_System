@@ -7,6 +7,8 @@
 
 FVector USquadFormation_Circle::EvaluateLeaderPosition_Implementation(FVector OriginalLocation, USquadComponent* Leader) const
 {
+	if (!SquadComponent) return OriginalLocation;
+
 	int DistanceToCheck = 0;
 	{
 		int Ring = 0;
@@ -28,7 +30,7 @@ FVector USquadFormation_Circle::EvaluateLeaderPosition_Implementation(FVector Or
 	};
 
 	//we need the nav system to check if the new position is a valid moveable position
-	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetWorld());
+	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(SquadComponent->GetWorld());
 	check(NavSystem);
 	FNavLocation NavLocation = FNavLocation();
 	NavSystem->ProjectPointToNavigation(OriginalLocation, NavLocation, FVector::One() * DistanceToCheck);
@@ -47,7 +49,7 @@ FVector USquadFormation_Circle::EvaluateLeaderPosition_Implementation(FVector Or
 			if (GetWorld()->LineTraceSingleByChannel(HitResult, (RayCastMatrix[i] * DistanceToCheck) + HeightenedPosition, RayCastMatrix[i] * DistanceToCheck + HeightenedPosition - FVector(0, 0, 1750), ECC_Visibility))
 			{
 #if WITH_EDITOR
-				DrawDebugLine(GetWorld(),
+				DrawDebugLine(SquadComponent->GetWorld(),
 					(RayCastMatrix[i] * DistanceToCheck) + HeightenedPosition,
 					RayCastMatrix[i] * DistanceToCheck + HeightenedPosition - FVector(0, 0, 1750),
 					FColor::Red, false, 5);
@@ -89,6 +91,7 @@ FVector USquadFormation_Circle::EvaluateLeaderPosition_Implementation(FVector Or
 FVector USquadFormation_Circle::GetMoveLocationForMember_Implementation(int MemberIndex, FVector OriginalMoveLocation) const
 {
 	if (MemberIndex == 0) return OriginalMoveLocation;
+	//if (!SquadComponent) return OriginalMoveLocation;
 
 	int Ring = 0;
 	int IndexPositionInRing = 0;
@@ -97,6 +100,9 @@ FVector USquadFormation_Circle::GetMoveLocationForMember_Implementation(int Memb
 	const float Degree = (360.0 / (UnitsPerRing * Ring)) * IndexPositionInRing;
 	const float PositionX = (DistancePerRing * Ring) * cos(Degree * PI / 180);
 	const float PositionY = (DistancePerRing * Ring) * sin(Degree * PI / 180);
+
+	//we need the nav system to check if the new position is a valid moveable position
+	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(SquadComponent->GetOwner()->GetWorld());
 
 	//Debug prints
 #if WITH_EDITOR
@@ -112,10 +118,24 @@ FVector USquadFormation_Circle::GetMoveLocationForMember_Implementation(int Memb
 		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red,
 			printValue);
 	}
+
+	if(!NavSystem)
+	{
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red,
+			"Nav System Does not Exist");
+	}
+	if (!SquadComponent)
+	{
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red,
+			"Nav System Does not Exist");
+
+		if(!NavSystem)
+		{
+			return OriginalMoveLocation;
+		}
+	}
 #endif
 
-	//we need the nav system to check if the new position is a valid moveable position
-	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetWorld());
 	check(NavSystem);
 	FNavLocation NavLocation = FNavLocation();
 	NavSystem->ProjectPointToNavigation(FVector(PositionX + OriginalMoveLocation.X, PositionY + OriginalMoveLocation.Y, OriginalMoveLocation.Z), NavLocation, FVector::One() * DistancePerRing * Ring);

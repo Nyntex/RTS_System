@@ -17,7 +17,9 @@ USquadComponent::USquadComponent()
 	SquadLeader = nullptr;
 	if(FormationClass)
 	{
-		SquadFormation = Cast<USquadFormation>(CreateDefaultSubobject(FormationClass->GetFName(), FormationClass.Get(), FormationClass.Get(), true, false));
+		SquadFormation = NewObject<USquadFormation>(this, FormationClass, FormationClass->GetFName());
+		//SquadFormation = Cast<USquadFormation>(CreateDefaultSubobject(FormationClass->GetFName(), FormationClass.Get(), FormationClass.Get(), true, false));
+		SquadFormation->SquadComponent = this;
 	}
 }
 
@@ -55,12 +57,15 @@ void USquadComponent::PostEditChangeProperty(struct FPropertyChangedEvent& Prope
 		{
 			if (SquadFormation == nullptr)
 			{
-				SquadFormation = Cast<USquadFormation>(CreateDefaultSubobject(FormationClass->GetFName(), FormationClass.Get(), FormationClass.Get(), true, false));
+				SquadFormation = NewObject<USquadFormation>(this, FormationClass, FormationClass->GetFName());
+				//SquadFormation = Cast<USquadFormation>(CreateDefaultSubobject(FormationClass->GetFName(), FormationClass.Get(), FormationClass.Get(), true, false));
 			}
 			else if (SquadFormation->GetClass()->GetFName() != FormationClass->GetFName() && FormationClass->IsValidLowLevel())
 			{
-				SquadFormation = Cast<USquadFormation>(CreateDefaultSubobject(FormationClass->GetFName(), FormationClass.Get(), FormationClass.Get(), true, false));
+				SquadFormation = NewObject<USquadFormation>(this, FormationClass, FormationClass->GetFName());
+				//SquadFormation = Cast<USquadFormation>(CreateDefaultSubobject(FormationClass->GetFName(), FormationClass.Get(), FormationClass.Get(), true, false));
 			}
+			SquadFormation->SquadComponent = this;
 		}
 		else
 		{

@@ -4,10 +4,12 @@
 #include "RTSFaction/Base/RTSUnit.h"
 
 #include "AIController.h"
+#include "NavigationSystem.h"
 #include "AI/NavigationSystemBase.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Squad/SquadFormation.h"
 
 #define IMPLEMENTSINTERFACE(x) GetClass()->ImplementsInterface(x::StaticClass())
 
@@ -18,6 +20,7 @@ ARTSUnit::ARTSUnit()
 	PrimaryActorTick.bCanEverTick = true;
 	SetReplicates(true);
 	SquadComponent = CreateDefaultSubobject<USquadComponent>(TEXT("Squad Component"));
+	//StatsComponent = CreateDefaultSubobject<UStatsComponent>(TEXT("Stats Component"));
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 	GetCapsuleComponent()->SetAreaClassOverride(FNavigationSystem::GetDefaultObstacleArea());
 	GetCapsuleComponent()->SetCanEverAffectNavigation(true);
@@ -34,6 +37,16 @@ void ARTSUnit::BeginPlay()
 	if(controller->GetPlayerState<APlayerState>())
 	{
 		SetHoverMaterialDepthNumberByRelation(controller->GetPlayerState<APlayerState>());
+	}
+
+	SquadComponent->SquadFormation->SquadComponent = SquadComponent;
+
+	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetWorld());
+	check(NavSystem);
+	if (NavSystem)
+	{
+		GEngine->AddOnScreenDebugMessage(INDEX_NONE, 5, FColor::Red,
+			"Nav System now does exist");
 	}
 }
 
@@ -61,6 +74,7 @@ void ARTSUnit::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME(ARTSUnit, GameplayTags);
 	DOREPLIFETIME(ARTSUnit, SquadComponent);
 	DOREPLIFETIME(ARTSUnit, OwningPlayerState);
+	//DOREPLIFETIME(ARTSUnit, StatsComponent);
 }
 
 void ARTSUnit::SetHoverMaterialDepthNumberByRelation(const APlayerState* PlayerToCheck)
