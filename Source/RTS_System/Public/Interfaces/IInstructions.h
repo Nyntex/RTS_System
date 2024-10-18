@@ -48,5 +48,5 @@ public:
 	bool CanBeRepaired();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "IInstructions")
-	bool CanBeInteracted();
+	bool CanBeInteracted(const AActor* ActorThatInteracts);
 };

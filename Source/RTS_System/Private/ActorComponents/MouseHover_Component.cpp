@@ -6,7 +6,10 @@
 #include "Squad/ISquad.h"
 
 #define IMPLEMENTSINTERFACE(x) GetClass()->ImplementsInterface(x::StaticClass())
-#define AS_ISQUAD()
+
+/* These casts do not work with blueprint defined classes, for blueprint classes use the one above */
+#define AS_ISQUAD(x) IISquad* squad = Cast<IISquad>(x) 
+#define AS_ISELECTABLE(x) IISelectable* selectable = Cast<IISelectable>(x)
 
 // Sets default values for this component's properties
 UMouseHover_Component::UMouseHover_Component()
@@ -141,16 +144,17 @@ TArray<AActor*> UMouseHover_Component::SingularizeActorArray(const TArray<AActor
 {
 	TArray<AActor*> SingularizedActors = TArray<AActor*>();
 	SingularizedActors.Reserve(ToSingularize.Num() / 2);
+
 	for (AActor* target : ToSingularize)
 	{
 		if (!target) continue;
 		if (!target->IMPLEMENTSINTERFACE(UISelectable)) continue;
 
-		if(target->IMPLEMENTSINTERFACE(UISquad))
+		if(AS_ISQUAD(target))
 		{
-			if (IISquad::Execute_HasSquad(target))
+			if (squad->HasSquad_Implementation())
 			{
-				SingularizedActors.AddUnique(IISquad::Execute_GetSquadLeaderActor(target));
+				SingularizedActors.AddUnique(squad->GetSquadLeaderActor_Implementation());
 			}
 		}
 		else
@@ -166,7 +170,7 @@ void UMouseHover_Component::MakeNewSelection(const TArray<AActor*>& ActorsToSele
 {
 	TArray<AActor*> NewlyAddedActors = TArray<AActor*>();
 	TArray<AActor*> ActorsToRemove = TotalSelection;
-	const TArray<AActor*> SingularizedActorsToSelect = SingularizeActorArray(ActorsToSelect);
+	const TArray<AActor*> SingularizedActorsToSelect = ApplySelectionPriority(SingularizeActorArray(ActorsToSelect));
 	NewlyAddedActors.Reserve(SingularizedActorsToSelect.Num());
 
 	for(AActor* target : SingularizedActorsToSelect)
@@ -195,10 +199,10 @@ void UMouseHover_Component::MakeNewHovered(const TArray<AActor*>& ActorsToHover)
 {
 	TArray<AActor*> NewlyAddedActors = TArray<AActor*>();
 	TArray<AActor*> ActorsToRemove = TotalHovered;
-	TArray<AActor*> SingularizedActorsToHover = SingularizeActorArray(ActorsToHover);
-	NewlyAddedActors.Reserve(SingularizedActorsToHover.Num());
+	TArray<AActor*> PrioritizedSingleActorsToHover = ApplySelectionPriority(SingularizeActorArray(ActorsToHover));
+	NewlyAddedActors.Reserve(PrioritizedSingleActorsToHover.Num());
 
-	for (AActor* target : SingularizedActorsToHover)
+	for (AActor* target : PrioritizedSingleActorsToHover)
 	{
 		if (TotalHovered.Contains(target))
 		{
@@ -218,5 +222,47 @@ void UMouseHover_Component::MakeNewHovered(const TArray<AActor*>& ActorsToHover)
 	{
 		AddActorToHovered(NewSelected);
 	}
+}
+
+TArray<AActor*> UMouseHover_Component::ApplySelectionPriority(const TArray<AActor*>& SingularizedActors)
+{
+	int slack = SingularizedActors.Num();
+	TArray<AActor*> PrioritizedActors = TArray<AActor*>();
+	PrioritizedActors.Reserve(slack);
+
+	int SelectionPriority{ -1 };
+
+	for(AActor* target : SingularizedActors)
+	{
+		if (!target) continue;
+
+		//works with blueprint classes
+		if(target->IMPLEMENTSINTERFACE(UISelectable))
+		{
+			int TargetPriority{IISelectable::Execute_GetSelectionPriority(target)};
+			if (SelectionPriority < TargetPriority)
+			{
+				SelectionPriority = TargetPriority;
+				PrioritizedActors.Empty(slack);
+			}
+
+			PrioritizedActors.Add(target);
+		}
+
+		////does not work with blueprint classes
+		//if(AS_ISELECTABLE(target))
+		//{
+		//	int TargetPriority{ selectable->GetSelectionPriority_Implementation() };
+		//	if(SelectionPriority < TargetPriority)
+		//	{
+		//		SelectionPriority = TargetPriority;
+		//		PrioritizedActors.Empty(slack);
+		//	}
+
+		//	PrioritizedActors.Add(target);
+		//}
+	}
+
+	return PrioritizedActors;
 }
 

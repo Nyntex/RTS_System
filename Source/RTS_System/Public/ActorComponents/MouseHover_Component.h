@@ -67,4 +67,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "MouseHoverComponent", meta = (AutoCreateRefTerm = "ActorsToHover"))
 	void MakeNewHovered(const TArray<AActor*>& ActorsToHover);
+
+	UFUNCTION(BlueprintCallable, Category = "MouseHoverComponent", meta = (ReturnDisplayName = "PrioritizedArray"))
+	TArray<AActor*> ApplySelectionPriority(const TArray<AActor*>& SingularizedActors);
 };
